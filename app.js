@@ -10,47 +10,13 @@ const { stringify } = require('querystring');
 
 const TextToSpeechV1 = require('ibm-watson/text-to-speech/v1');
 
-// -------------------------
-// Definición de credenciales de servicio
-const service_credentials =
-{
-  "apikey": "9kagBdZqxckNDSJ0JoGKhMBI5Yfi8kiygHvjHzobdvga",
-  "iam_apikey_description": "Auto-generated for key 95adf4cc-10d8-4eab-b918-07515ba11cad",
-  "iam_apikey_name": "Auto-generated service credentials",
-  "iam_role_crn": "crn:v1:bluemix:public:iam::::serviceRole:Manager",
-  "iam_serviceid_crn": "crn:v1:bluemix:public:iam-identity::a/eadcd51e9c9c4467abd39a71d0077a2e::serviceid:ServiceId-63d358c9-df57-47a2-a779-59c543c49cb8",
-  "url": "https://api.eu-gb.speech-to-text.watson.cloud.ibm.com/instances/980890d5-fd14-4d4b-ac48-0c3e23251e8f"
-}
-
-// Consulta de audio que se le hace a Watson 
+// Autentificar el servicio de Speech to Text, completar con api key y service url
 const speechToText = new SpeechToTextV1({
-  authenticator: new IamAuthenticator({ apikey: '9kagBdZqxckNDSJ0JoGKhMBI5Yfi8kiygHvjHzobdvga' }),
-  serviceUrl: 'https://api.eu-gb.speech-to-text.watson.cloud.ibm.com/instances/980890d5-fd14-4d4b-ac48-0c3e23251e8f'
+  authenticator: new IamAuthenticator({ apikey: '' }),
+  serviceUrl: ''
 });
 
-const params = {
-  name: 'MiBelloModelito_IBMDeveloper',
-  baseModelName: 'es-AR_NarrowbandModel',
-  description: 'Modelo de ejemplo para IBM Developer',
-};
-
-async function createLanguageModel(params) {
-  // Se invoca al método de creación de modelo con nuestros parámetros
-  return speechToText.createLanguageModel(params)
-      .then(languageModel => {
-          // Se imprime en consola la respuesta del servicio
-          return JSON.stringify(languageModel, null, 2);
-      })
-      .catch(err => {
-          return err;
-      });
-}
-
-// Llamado a la función e impresión del resultado
-const result = await createLanguageModel(params);
-console.log(result);
-  
-
+// Mediante Speech to Text, obtengo del audio .wav la transcripción 
 const paramsSpeechToText = {
   audio: fs.createReadStream('audioPhone.wav'),
   contentType: 'audio/wav; rate=44100'
@@ -64,51 +30,54 @@ speechToText.recognize(paramsSpeechToText)
   .catch(err => {
     console.log(err);
   });
-// creo un txt solo para verificar que es lo que se transcribe
+  
+// Para verificar la correcta transcripción, genero un .txt
 fs.createReadStream('audioPhone.wav')
   .pipe(speechToText.recognizeUsingWebSocket({ contentType: 'audio/wav; rate=44100' }))
   .pipe(fs.createWriteStream('./transcription.txt'));
 
 // Conexion al assistant, inicio de la sesión
+// Completar con api key y service url de tu instancia de Watson.
 const assistant = new AssistantV2({
-  authenticator: new IamAuthenticator({ apikey: 'Ow4Gk2w2cxC7ktvyw_esUcEePR_Q5GB_SENC5dAkdkmU' }),
-  serviceUrl: 'https://api.eu-gb.assistant.watson.cloud.ibm.com/instances/e7376622-63a6-4672-800d-75f14473d9bd',
+  authenticator: new IamAuthenticator({ apikey: '' }),
+  serviceUrl: '',
   version: '2018-09-19'
 });
 
+// Iniciar a Watson Assistant desde cloud.ibm.com, seleccionar los "tres puntitos" del asistente que desees utilizar 
+// para esta demo y pulsar en Settings, desde allí podrás acceder al assistant id y completar el siguiente campo.
 assistant.createSession({
-  assistantId: '3ca54b8e-d780-48d4-894b-41ee373150e5'
+  assistantId: ''
 })
   .then(res => {
     mySession = res.result.session_id;
-    //console.log(mySession);
     message();
   })
   .catch(err => {
     console.log(err);
   });
 
-// Inicializo text to speech para pasar a audio la respuesta de watson
+// Inicializo Text to Speech para pasar a audio la respuesta de Watson
+// Completar con api key y service url de tu instancia de Text to Speech
 const textToSpeech = new TextToSpeechV1({
-  authenticator: new IamAuthenticator({ apikey: 'L820HAL1bwKlSrZFr_RugLnnS6_RRrR562bSVJuSnQJJ' }),
-  serviceUrl: 'https://api.eu-gb.text-to-speech.watson.cloud.ibm.com/instances/e4683dcf-f1a8-4e0f-a415-a5cb40302505'
+  authenticator: new IamAuthenticator({ apikey: '' }),
+  serviceUrl: ''
 });
 
+// Mismo assistant id utilizado anteriormente
 async function message() {
   await assistant.message(
       {
         input: { text: textFromAudio },
-        assistantId: '3ca54b8e-d780-48d4-894b-41ee373150e5',
+        assistantId: '',
         sessionId: mySession,
       })
       .then(response => {
-        //console.log(JSON.stringify(response.result.output.generic, null, 2));
         watsonResponse = response.result.output.generic[0].text;
-        //console.log(response.result.output.generic[0].text);
         
-        // genero el audio con la respuesta de watson
+        // Genero un audio .wav con la respuesta de Watson
         const paramsTextToSpeech = {
-          text: watsonResponse, // lo que responda watson.
+          text: watsonResponse, 
           voice: 'en-US_AllisonVoice', 
           accept: 'audio/wav'
         };        
